@@ -19,18 +19,57 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
+
+      - name: Set build metadata
+        shell: bash
+        run: |
+          echo "APP_VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          echo "BUILD_NUMBER=${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
+          echo "COMMIT_SHA=${GITHUB_SHA}" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Build
+      # Windows build (icon + version metadata)
+      - name: Build Windows
+        if: runner.os == 'Windows'
         run: |
-          pyinstaller --noconfirm --windowed --onefile app/main.py
+          pyinstaller ^
+            --noconfirm ^
+            --windowed ^
+            --onefile ^
+            --icon assets/icon.ico ^
+            --version-file packaging/windows-version.txt ^
+            --name MyApp-${{ github.ref_name }} ^
+            app/main.py
+
+      # macOS build
+      - name: Build macOS
+        if: runner.os == 'macOS'
+        run: |
+          pyinstaller \
+            --noconfirm \
+            --windowed \
+            --onefile \
+            --name MyApp-${{ github.ref_name }} \
+            app/main.py
+
+      # Linux build
+      - name: Build Linux
+        if: runner.os == 'Linux'
+        run: |
+          pyinstaller \
+            --noconfirm \
+            --windowed \
+            --onefile \
+            --name MyApp-${{ github.ref_name }} \
+            app/main.py
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}
+          name: MyApp-${{ matrix.os }}-${{ github.ref_name }}
           path: dist/*

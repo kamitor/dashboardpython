@@ -34,18 +34,25 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
+      - name: Extract version from tag
+        run: echo "APP_VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+
       - name: Build with PyInstaller
         run: |
-          pyinstaller --onefile --windowed --name MyApp app/main.py
+          pyinstaller \
+            --onefile \
+            --windowed \
+            --name MyApp-${{ github.ref_name }} \
+            app/main.py
 
       - name: Prepare artifact folder
         shell: bash
         run: |
           mkdir -p release
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            cp dist/MyApp.exe release/MyApp-windows.exe
+            cp dist/MyApp-${{ github.ref_name }}.exe release/MyApp-${{ github.ref_name }}-windows.exe
           else
-            cp dist/MyApp release/MyApp-linux
+            cp dist/MyApp-${{ github.ref_name }} release/MyApp-${{ github.ref_name }}-linux
           fi
 
       - name: Upload build artifact

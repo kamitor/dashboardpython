@@ -1,12 +1,19 @@
 import sys
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget
 import subprocess
+import os
+
+APP_VERSION = os.environ.get("APP_VERSION", "dev").lstrip("v")
+BUILD_NUMBER = os.environ.get("BUILD_NUMBER", "0")
+COMMIT_SHA = os.environ.get("COMMIT_SHA", "unknown")[:7]
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Research Desktop Demo")
+        w.setWindowTitle(f"ResilienceScan v{APP_VERSION} build {BUILD_NUMBER} ({COMMIT_SHA})")
+
 
         layout = QVBoxLayout()
 
