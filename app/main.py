@@ -7,12 +7,34 @@ APP_VERSION = os.environ.get("APP_VERSION", "dev").lstrip("v")
 BUILD_NUMBER = os.environ.get("BUILD_NUMBER", "0")
 COMMIT_SHA = os.environ.get("COMMIT_SHA", "unknown")[:7]
 
+# Injected by GitHub Actions
+REPO_NAME = os.environ.get("REPO_NAME", "MyApp")
+
+APP_NAME = REPO_NAME.replace("-", " ").title()
+
+import requests
+
+def check_for_updates(current_version):
+    repo = os.environ.get("GITHUB_REPOSITORY", "")
+    if not repo:
+        return
+
+    url = f"https://api.github.com/repos/{repo}/releases/latest"
+    r = requests.get(url)
+    if r.status_code == 200:
+        latest = r.json()["tag_name"].lstrip("v")
+        if latest != current_version:
+            print("Update available:", latest)
+
+
+w.setWindowTitle(f"{APP_NAME} v{APP_VERSION} build {BUILD_NUMBER} ({COMMIT_SHA})")
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        w.setWindowTitle(f"ResilienceScan v{APP_VERSION} build {BUILD_NUMBER} ({COMMIT_SHA})")
+        w.setWindowTitle(f"{APP_NAME} v{APP_VERSION} build {BUILD_NUMBER} ({COMMIT_SHA})")
 
 
         layout = QVBoxLayout()

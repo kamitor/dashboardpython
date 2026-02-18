@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "v*"
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -24,14 +26,21 @@ jobs:
       - name: Set build metadata
         shell: bash
         run: |
-          echo "APP_VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          VERSION="${GITHUB_REF_NAME:-${GITHUB_REF##*/}}"
+          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
           echo "BUILD_NUMBER=${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
           echo "COMMIT_SHA=${GITHUB_SHA}" >> $GITHUB_ENV
+          echo "REPO_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
+
+      - name: Install WiX Toolset
+        if: runner.os == 'Windows'
+        run: choco install wix --no-progress -y
 
       # Windows build (icon + version metadata)
       - name: Build Windows
@@ -43,8 +52,24 @@ jobs:
             --onefile ^
             --icon assets/icon.ico ^
             --version-file packaging/windows-version.txt ^
-            --name MyApp-${{ github.ref_name }} ^
+            --name ${{ env.REPO_NAME }}-${{ env.APP_VERSION }} ^
             app/main.py
+
+      - name: Build MSI Installer
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $AppName = "${{ env.REPO_NAME }}"
+          $Version = "${{ env.APP_VERSION }}"
+          $SourceExe = "dist\\$AppName-$Version.exe"
+
+          candle packaging\\installer.wxs `
+            -dAppName=$AppName `
+            -dSourceExe=$SourceExe `
+            -dProductVersion=$Version
+
+          light installer.wixobj `
+            -o dist\\$AppName-$Version.msi
 
       # macOS build
       - name: Build macOS
@@ -54,7 +79,7 @@ jobs:
             --noconfirm \
             --windowed \
             --onefile \
-            --name MyApp-${{ github.ref_name }} \
+            --name ${{ env.REPO_NAME }}-${{ env.APP_VERSION }} \
             app/main.py
 
       # Linux build
@@ -65,11 +90,30 @@ jobs:
             --noconfirm \
             --windowed \
             --onefile \
-            --name MyApp-${{ github.ref_name }} \
+            --name ${{ env.REPO_NAME }}-${{ env.APP_VERSION }} \
             app/main.py
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MyApp-${{ matrix.os }}-${{ github.ref_name }}
+          name: ${{ env.REPO_NAME }}-${{ matrix.os }}-${{ env.APP_VERSION }}
           path: dist/*
+
+  upload-to-release:
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Display structure
+        run: ls -R release-assets
+
+      - name: Upload assets to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/**/*

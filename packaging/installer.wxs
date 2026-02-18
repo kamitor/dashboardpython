@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+
+  <Product
+      Id="*"
+      Name="$(var.AppName)"
+      Language="1033"
+      Version="$(var.ProductVersion)"
+      Manufacturer="Your Company"
+      UpgradeCode="PUT-YOUR-STABLE-GUID-HERE">
+
+    <Package
+        InstallerVersion="500"
+        Compressed="yes"
+        InstallScope="perMachine" />
+
+    <!-- Enables major upgrades (old version automatically removed) -->
+    <MajorUpgrade
+        AllowDowngrades="no"
+        DowngradeErrorMessage="A newer version of $(var.AppName) is already installed." />
+
+    <MediaTemplate />
+
+    <Feature Id="MainFeature" Title="$(var.AppName)" Level="1">
+      <ComponentGroupRef Id="ProductComponents" />
+    </Feature>
+
+  </Product>
+
+  <!-- Directory Structure -->
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="INSTALLFOLDER" Name="$(var.AppName)" />
+      </Directory>
+
+      <!-- Start Menu -->
+      <Directory Id="ProgramMenuFolder" Name="Programs">
+        <Directory Id="AppProgramMenuDir" Name="$(var.AppName)" />
+      </Directory>
+
+      <!-- Desktop -->
+      <Directory Id="DesktopFolder" Name="Desktop" />
+
+    </Directory>
+  </Fragment>
+
+  <!-- Files + Shortcuts -->
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+
+      <Component Id="MainExecutableComponent" Guid="*">
+
+        <File
+            Id="MainExeFile"
+            Source="$(var.SourceExe)"
+            KeyPath="yes" />
+
+        <!-- Start Menu Shortcut -->
+        <Shortcut
+            Id="StartMenuShortcut"
+            Directory="AppProgramMenuDir"
+            Name="$(var.AppName)"
+            WorkingDirectory="INSTALLFOLDER"
+            Target="[INSTALLFOLDER]$(var.AppName)-$(var.ProductVersion).exe"
+            Advertise="no" />
+
+        <!-- Desktop Shortcut -->
+        <Shortcut
+            Id="DesktopShortcut"
+            Directory="DesktopFolder"
+            Name="$(var.AppName)"
+            WorkingDirectory="INSTALLFOLDER"
+            Target="[INSTALLFOLDER]$(var.AppName)-$(var.ProductVersion).exe"
+            Advertise="no" />
+
+        <!-- Required for proper uninstall cleanup -->
+        <RemoveFolder Id="AppProgramMenuDir" On="uninstall" />
+
+        <RegistryValue
+            Root="HKCU"
+            Key="Software\$(var.AppName)"
+            Name="installed"
+            Type="integer"
+            Value="1"
+            KeyPath="yes" />
+
+      </Component>
+
+    </ComponentGroup>
+  </Fragment>
+
+</Wix>
