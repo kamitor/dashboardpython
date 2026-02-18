@@ -46,7 +46,8 @@ jobs:
 
       - name: Install WiX Toolset
         if: runner.os == 'Windows'
-        run: choco install wix --no-progress -y
+        run: choco install wixtoolset --no-progress -y
+
 
       # Windows build (icon + version metadata)
       - name: Build Windows
