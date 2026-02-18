@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/kamitor/dashboardpython/compare/v0.5.0...v0.6.0) (2026-02-18)
+
+
+### Features
+
+* Fucking work ([f0af0be](https://github.com/kamitor/dashboardpython/commit/f0af0be28c8f97015919fb454c0b84954127b6eb))
+
 ## [0.5.0](https://github.com/kamitor/dashboardpython/compare/v0.4.0...v0.5.0) (2026-02-18)
 
 
