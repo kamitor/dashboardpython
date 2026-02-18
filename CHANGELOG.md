@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/kamitor/dashboardpython/compare/v0.2.1...v0.3.0) (2026-02-18)
+
+
+### Features
+
+* trigger fresh release build ([6b8243a](https://github.com/kamitor/dashboardpython/commit/6b8243a5f3b7a18164fb1d7f6606e63a587cdac9))
+
 ## [0.2.1](https://github.com/kamitor/dashboardpython/compare/v0.2.0...v0.2.1) (2026-02-18)
 
 
