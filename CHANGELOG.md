@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/kamitor/dashboardpython/compare/v0.3.0...v0.3.1) (2026-02-18)
+
+
+### Bug Fixes
+
+* .exe ([1b41493](https://github.com/kamitor/dashboardpython/commit/1b414936f95fdc58b08b880120867473ada969d8))
+
 ## [0.3.0](https://github.com/kamitor/dashboardpython/compare/v0.2.1...v0.3.0) (2026-02-18)
 
 
