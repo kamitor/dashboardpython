@@ -2,9 +2,9 @@ name: Build Desktop App
 
 
 on:
-  push:
-    tags:
-      - "v*"
+  release:
+    types: [published]
+
 
 
 permissions:
