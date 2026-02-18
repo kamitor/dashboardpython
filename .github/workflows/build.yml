@@ -52,15 +52,17 @@ jobs:
       # Windows build (icon + version metadata)
       - name: Build Windows
         if: runner.os == 'Windows'
+        shell: powershell
         run: |
-          pyinstaller ^
-            --noconfirm ^
-            --windowed ^
-            --onefile ^
-            --icon assets/icon.ico ^
-            --version-file packaging/windows-version.txt ^
-            --name ${{ env.REPO_NAME }}-${{ env.APP_VERSION }} ^
+          pyinstaller `
+            --noconfirm `
+            --windowed `
+            --onefile `
+            --icon assets/icon.ico `
+            --version-file packaging/windows-version.txt `
+            --name "${{ env.REPO_NAME }}-${{ env.APP_VERSION }}" `
             app/main.py
+
 
       - name: Build MSI Installer
         if: runner.os == 'Windows'
