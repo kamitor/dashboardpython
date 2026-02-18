@@ -1,18 +1,26 @@
 import sys
-from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QLabel, QVBoxLayout, QWidget
-import subprocess
 import os
+import subprocess
+import requests
+
+from PySide6.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QPushButton,
+    QLabel,
+    QVBoxLayout,
+    QWidget,
+)
+
+# --- Build Metadata ---
 
 APP_VERSION = os.environ.get("APP_VERSION", "dev").lstrip("v")
 BUILD_NUMBER = os.environ.get("BUILD_NUMBER", "0")
 COMMIT_SHA = os.environ.get("COMMIT_SHA", "unknown")[:7]
 
-# Injected by GitHub Actions
 REPO_NAME = os.environ.get("REPO_NAME", "MyApp")
-
 APP_NAME = REPO_NAME.replace("-", " ").title()
 
-import requests
 
 def check_for_updates(current_version):
     repo = os.environ.get("GITHUB_REPOSITORY", "")
@@ -27,15 +35,13 @@ def check_for_updates(current_version):
             print("Update available:", latest)
 
 
-w.setWindowTitle(f"{APP_NAME} v{APP_VERSION} build {BUILD_NUMBER} ({COMMIT_SHA})")
-
-
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        w.setWindowTitle(f"{APP_NAME} v{APP_VERSION} build {BUILD_NUMBER} ({COMMIT_SHA})")
-
+        self.setWindowTitle(
+            f"{APP_NAME} v{APP_VERSION} build {BUILD_NUMBER} ({COMMIT_SHA})"
+        )
 
         layout = QVBoxLayout()
 
@@ -55,11 +61,13 @@ class MainWindow(QMainWindow):
         result = subprocess.run(
             ["python", "--version"],
             capture_output=True,
-            text=True
+            text=True,
         )
         self.label.setText(result.stdout.strip())
 
-app = QApplication(sys.argv)
-window = MainWindow()
-window.show()
-app.exec()
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    app.exec()
