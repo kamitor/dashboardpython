@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/kamitor/dashboardpython/compare/v0.3.1...v0.4.0) (2026-02-18)
+
+
+### Features
+
+* stabilize release pipeline ([0c7cee3](https://github.com/kamitor/dashboardpython/commit/0c7cee30d0c7ba16075dd67ec7d4ed2d40c36ebc))
+
 ## [0.3.1](https://github.com/kamitor/dashboardpython/compare/v0.3.0...v0.3.1) (2026-02-18)
 
 
