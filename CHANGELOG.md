@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/kamitor/dashboardpython/compare/v0.2.0...v0.2.1) (2026-02-18)
+
+
+### Bug Fixes
+
+* allow workflow to upload release assets ([829a486](https://github.com/kamitor/dashboardpython/commit/829a4868802b24d1f673ef28175aae0b0294dce5))
+
 ## [0.2.0](https://github.com/kamitor/dashboardpython/compare/v0.1.0...v0.2.0) (2026-02-18)
 
 
