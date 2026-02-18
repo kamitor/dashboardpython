@@ -48,7 +48,28 @@ jobs:
         if: runner.os == 'Windows'
         run: choco install wixtoolset --no-progress -y
 
+      - name: Generate Windows version file
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $version = "${{ env.APP_VERSION }}".TrimStart("v")
+          @"
+          VSVersionInfo(
+            ffi=FixedFileInfo(
+              filevers=($version,0),
+              prodvers=($version,0),
+              mask=0x3f,
+              flags=0x0,
+              OS=0x4,
+              fileType=0x1,
+              subtype=0x0,
+              date=(0, 0)
+            ),
+            kids=[]
+          )
+          "@ | Out-File packaging\windows-version.txt -Encoding ascii
 
+ 
       # Windows build (icon + version metadata)
       - name: Build Windows
         if: runner.os == 'Windows'
