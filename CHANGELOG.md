@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/kamitor/dashboardpython/compare/v0.4.0...v0.5.0) (2026-02-18)
+
+
+### Features
+
+* fix the pipeline ([a19d718](https://github.com/kamitor/dashboardpython/commit/a19d71894446e984dbbb716149521d1404b88fe1))
+
 ## [0.4.0](https://github.com/kamitor/dashboardpython/compare/v0.3.1...v0.4.0) (2026-02-18)
 
 
