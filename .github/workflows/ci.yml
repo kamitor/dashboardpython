@@ -33,5 +33,5 @@ jobs:
         run: ruff format --check .
 
       - name: Run tests
-        run: pytest --maxfail=1 --disable-warnings -q || exit 0
+        run: pytest --maxfail=1 --disable-warnings -q
 

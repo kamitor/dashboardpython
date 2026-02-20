@@ -1,13 +1,13 @@
-import sys
 import os
 import subprocess
-import requests
+import sys
 
+import requests
 from PySide6.QtWidgets import (
     QApplication,
+    QLabel,
     QMainWindow,
     QPushButton,
-    QLabel,
     QVBoxLayout,
     QWidget,
 )
