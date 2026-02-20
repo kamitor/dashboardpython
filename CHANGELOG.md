@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.0](https://github.com/kamitor/dashboardpython/compare/v0.7.0...v0.8.0) (2026-02-20)
+
+
+### Features
+
+* rewrite build pipeline, drop WiX MSI installer ([39f1bea](https://github.com/kamitor/dashboardpython/commit/39f1bea213633ac19e0f4976f1f905a46659fa82))
+
+
+### Bug Fixes
+
+* fix CodeQL and Dependabot workflows ([2a47c05](https://github.com/kamitor/dashboardpython/commit/2a47c052d7a3e00f8d99ae70c0bc80eabc7c1eb0))
+* quote WiX candle -d args for PowerShell variable expansion ([2a5a9de](https://github.com/kamitor/dashboardpython/commit/2a5a9de6e3651af30f795608dbb3d951297a2397))
+* restructure WiX installer to fix ICE validation errors ([90f34bf](https://github.com/kamitor/dashboardpython/commit/90f34bf12750a3e6571da2b36b06d3f85e63f43e))
+
 ## [0.7.0](https://github.com/kamitor/dashboardpython/compare/v0.6.0...v0.7.0) (2026-02-20)
 
 
