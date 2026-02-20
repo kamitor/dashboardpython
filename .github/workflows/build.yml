@@ -4,11 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-  release:
-    types: [published]
-
-permissions:
-  contents: write
 
 jobs:
   build:
@@ -56,7 +51,6 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      # -- Linux: Qt system libraries for headless build --
       - name: Install Linux system dependencies
         if: runner.os == 'Linux'
         run: |
@@ -68,7 +62,6 @@ jobs:
             libegl1 \
             libglib2.0-0
 
-      # -- Windows: version metadata for exe properties --
       - name: Generate Windows version-info file
         if: runner.os == 'Windows'
         shell: python
@@ -120,7 +113,6 @@ jobs:
           with open("packaging/windows-version.txt", "w") as f:
               f.write(content)
 
-      # -- Build: Windows --
       - name: Build Windows
         if: runner.os == 'Windows'
         shell: powershell
@@ -139,7 +131,6 @@ jobs:
             --name "${{ env.REPO_NAME }}" `
             app/main.py
 
-      # -- Build: macOS --
       - name: Build macOS
         if: runner.os == 'macOS'
         run: |
@@ -158,7 +149,6 @@ jobs:
             --name "${{ env.REPO_NAME }}" \
             app/main.py
 
-      # -- Build: Linux --
       - name: Build Linux
         if: runner.os == 'Linux'
         run: |
@@ -169,41 +159,8 @@ jobs:
             --name "${{ env.REPO_NAME }}" \
             app/main.py
 
-      # -- Rename with version and platform for release --
-      - name: Rename artifact
-        shell: bash
-        run: |
-          cd dist
-          for f in *; do
-            name="${f%.*}"
-            ext="${f##*.}"
-            if [ "$name" = "$ext" ]; then
-              mv "$f" "${f}-${{ env.APP_VERSION }}-${{ matrix.artifact-name }}"
-            else
-              mv "$f" "${name}-${{ env.APP_VERSION }}-${{ matrix.artifact-name }}.${ext}"
-            fi
-          done
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.REPO_NAME }}-${{ matrix.artifact-name }}
           path: dist/*
-
-  # -- Attach artifacts to GitHub Release --
-  upload-to-release:
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name == 'release'
-
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: release-assets
-          merge-multiple: true
-
-      - name: Upload assets to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: release-assets/*
