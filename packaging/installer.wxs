@@ -14,7 +14,6 @@
         Compressed="yes"
         InstallScope="perMachine" />
 
-    <!-- Enables major upgrades (old version automatically removed) -->
     <MajorUpgrade
         AllowDowngrades="no"
         DowngradeErrorMessage="A newer version of $(var.AppName) is already installed." />
@@ -35,29 +34,38 @@
         <Directory Id="INSTALLFOLDER" Name="$(var.AppName)" />
       </Directory>
 
-      <!-- Start Menu -->
-      <Directory Id="ProgramMenuFolder" Name="Programs">
+      <Directory Id="ProgramMenuFolder">
         <Directory Id="AppProgramMenuDir" Name="$(var.AppName)" />
       </Directory>
 
-      <!-- Desktop -->
-      <Directory Id="DesktopFolder" Name="Desktop" />
+      <Directory Id="DesktopFolder" />
 
     </Directory>
   </Fragment>
 
-  <!-- Files + Shortcuts -->
+  <!-- Components -->
   <Fragment>
     <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
 
+      <!-- Executable file (per-machine, file KeyPath) -->
       <Component Id="MainExecutableComponent" Guid="*">
-
         <File
             Id="MainExeFile"
             Source="$(var.SourceExe)"
             KeyPath="yes" />
+      </Component>
 
-        <!-- Start Menu Shortcut -->
+      <!-- Shortcuts + registry (per-user, HKCU registry KeyPath) -->
+      <Component Id="ShortcutsComponent" Guid="*">
+
+        <RegistryValue
+            Root="HKCU"
+            Key="Software\$(var.AppName)"
+            Name="installed"
+            Type="integer"
+            Value="1"
+            KeyPath="yes" />
+
         <Shortcut
             Id="StartMenuShortcut"
             Directory="AppProgramMenuDir"
@@ -66,7 +74,6 @@
             Target="[INSTALLFOLDER]$(var.AppName)-$(var.ProductVersion).exe"
             Advertise="no" />
 
-        <!-- Desktop Shortcut -->
         <Shortcut
             Id="DesktopShortcut"
             Directory="DesktopFolder"
@@ -75,20 +82,8 @@
             Target="[INSTALLFOLDER]$(var.AppName)-$(var.ProductVersion).exe"
             Advertise="no" />
 
-        <!-- Required for proper uninstall cleanup -->
-        <RemoveFolder Id="AppProgramMenuDir" On="uninstall" />
+        <RemoveFolder Id="CleanAppProgramMenuDir" Directory="AppProgramMenuDir" On="uninstall" />
 
-      </Component>
-
-      <!-- Registry marker for installed state (separate component) -->
-      <Component Id="RegistryComponent" Guid="*">
-        <RegistryValue
-            Root="HKCU"
-            Key="Software\$(var.AppName)"
-            Name="installed"
-            Type="integer"
-            Value="1"
-            KeyPath="yes" />
       </Component>
 
     </ComponentGroup>
