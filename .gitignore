@@ -23,5 +23,3 @@ Thumbs.db
 
 # Packaging artifacts
 packaging/windows-version.txt
-*.wixobj
-*.wixpdb
