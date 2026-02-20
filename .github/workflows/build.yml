@@ -134,9 +134,9 @@ jobs:
           $SourceExe  = "dist\$AppName-$Version.exe"
 
           candle packaging\installer.wxs `
-            -dAppName=$AppName `
-            -dSourceExe=$SourceExe `
-            -dProductVersion=$Version
+            "-dAppName=$AppName" `
+            "-dSourceExe=$SourceExe" `
+            "-dProductVersion=$Version"
 
           light installer.wixobj `
             -o dist\$AppName-$Version.msi
