@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/kamitor/dashboardpython/compare/v0.8.0...v0.9.0) (2026-02-20)
+
+
+### Features
+
+* fix release artifacts not attaching to GitHub Releases ([e4bce03](https://github.com/kamitor/dashboardpython/commit/e4bce03565ebba3cf51e1bde16f117d77ae1fe74))
+
 ## [0.8.0](https://github.com/kamitor/dashboardpython/compare/v0.7.0...v0.8.0) (2026-02-20)
 
 
