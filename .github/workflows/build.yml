@@ -31,10 +31,20 @@ jobs:
       - name: Set build metadata
         shell: bash
         run: |
-          VERSION="${GITHUB_REF_NAME:-${GITHUB_REF##*/}}"
-          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+          # For tagged releases use the tag, otherwise default to 0.0.0
+          RAW_VERSION="${GITHUB_REF_NAME:-dev}"
+          CLEAN_VERSION="${RAW_VERSION#v}"
+
+          # Only keep the version if it looks like semver (digits.digits.digits)
+          if [[ "$CLEAN_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            VERSION="$CLEAN_VERSION"
+          else
+            VERSION="0.0.0"
+          fi
+
+          echo "APP_VERSION=$VERSION"           >> $GITHUB_ENV
           echo "BUILD_NUMBER=${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
-          echo "COMMIT_SHA=${GITHUB_SHA}" >> $GITHUB_ENV
+          echo "COMMIT_SHA=${GITHUB_SHA}"        >> $GITHUB_ENV
           echo "REPO_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_ENV
 
       - name: Install dependencies
@@ -43,43 +53,44 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Install WiX Toolset
-        if: runner.os == 'Windows'
-        run: choco install wixtoolset --no-progress -y
+      # ── Linux: install Qt system libraries for headless build ──
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libxkbcommon-x11-0 \
+            libxcb-xinerama0 \
+            libxcb-cursor0 \
+            libegl1 \
+            libglib2.0-0
 
-      # Clean Windows artifacts to avoid spec reuse
-      - name: Clean Windows build artifacts
+      # ── Windows: WiX Toolset for MSI installer ──
+      - name: Install WiX Toolset
         if: runner.os == 'Windows'
         shell: powershell
         run: |
-          if (Test-Path build) { Remove-Item build -Recurse -Force }
-          if (Test-Path dist) { Remove-Item dist -Recurse -Force }
-          Get-ChildItem -Filter *.spec | Remove-Item -Force -ErrorAction SilentlyContinue
+          choco install wixtoolset --no-progress -y
+          # Add WiX to PATH for this job
+          $wixDir = (Get-ChildItem "C:\Program Files (x86)\WiX Toolset v3*\bin" | Select-Object -First 1).FullName
+          echo "$wixDir" | Out-File -Append $env:GITHUB_PATH
 
       - name: Generate Windows version file
         if: runner.os == 'Windows'
-        shell: powershell
+        shell: python
         run: |
-          $rawVer = "${{ env.APP_VERSION }}".TrimStart("v")
-          Write-Host "Raw version: $rawVer"
+          import os
 
-          if ($rawVer -match '^\d+\.\d+\.\d+$') {
-              $parts = $rawVer.Split('.')
-              $major = [int]$parts[0]
-              $minor = [int]$parts[1]
-              $patch = [int]$parts[2]
-          } else {
-              Write-Host "Non-standard version, using build number instead."
-              $major = 0
-              $minor = 0
-              $patch = [int]${{ env.BUILD_NUMBER }}
-          }
+          version = os.environ["APP_VERSION"]  # already cleaned (e.g. "0.6.0")
+          parts = version.split(".")
+          major = int(parts[0]) if len(parts) > 0 else 0
+          minor = int(parts[1]) if len(parts) > 1 else 0
+          patch = int(parts[2]) if len(parts) > 2 else 0
 
-          $content = @"
-          VSVersionInfo(
+          content = f"""VSVersionInfo(
             ffi=FixedFileInfo(
-              filevers=($major,$minor,$patch,0),
-              prodvers=($major,$minor,$patch,0),
+              filevers=({major}, {minor}, {patch}, 0),
+              prodvers=({major}, {minor}, {patch}, 0),
               mask=0x3f,
               flags=0x0,
               OS=0x4,
@@ -89,26 +100,27 @@ jobs:
             ),
             kids=[]
           )
-          "@
+          """
 
-              Write-Host "Generated version info:"
-              Write-Host $content
+          os.makedirs("packaging", exist_ok=True)
+          with open("packaging/windows-version.txt", "w") as f:
+              f.write(content)
 
-              $outPath = "packaging\windows-version.txt"
-              $content | Out-File -FilePath $outPath -Encoding ascii
-
-              Write-Host "Windows version file written to $outPath"
-
+      # ── Windows build ──
       - name: Build Windows
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $iconArg = @()
+          if (Test-Path "assets/icon.ico") {
+            $iconArg = @("--icon", "assets/icon.ico")
+          }
           pyinstaller `
             --clean `
             --noconfirm `
             --windowed `
             --onefile `
-            --icon assets/icon.ico `
+            @iconArg `
             --version-file packaging/windows-version.txt `
             --name "${{ env.REPO_NAME }}-${{ env.APP_VERSION }}" `
             app/main.py
@@ -117,38 +129,44 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
-          $AppName = "${{ env.REPO_NAME }}"
-          $Version = "${{ env.APP_VERSION }}"
-          $SourceExe = "dist\\$AppName-$Version.exe"
+          $AppName    = "${{ env.REPO_NAME }}"
+          $Version    = "${{ env.APP_VERSION }}"
+          $SourceExe  = "dist\$AppName-$Version.exe"
 
-          candle packaging\\installer.wxs `
+          candle packaging\installer.wxs `
             -dAppName=$AppName `
             -dSourceExe=$SourceExe `
             -dProductVersion=$Version
 
           light installer.wixobj `
-            -o dist\\$AppName-$Version.msi
+            -o dist\$AppName-$Version.msi
 
+      # ── macOS build ──
       - name: Build macOS
         if: runner.os == 'macOS'
         run: |
+          ICON_ARG=""
+          if [ -f "assets/icon.ico" ]; then
+            ICON_ARG="--icon assets/icon.ico"
+          fi
           pyinstaller \
             --clean \
             --noconfirm \
             --windowed \
             --onefile \
-            --name ${{ env.REPO_NAME }}-${{ env.APP_VERSION }} \
+            $ICON_ARG \
+            --name "${{ env.REPO_NAME }}-${{ env.APP_VERSION }}" \
             app/main.py
 
+      # ── Linux build ──
       - name: Build Linux
         if: runner.os == 'Linux'
         run: |
           pyinstaller \
             --clean \
             --noconfirm \
-            --windowed \
             --onefile \
-            --name ${{ env.REPO_NAME }}-${{ env.APP_VERSION }} \
+            --name "${{ env.REPO_NAME }}-${{ env.APP_VERSION }}" \
             app/main.py
 
       - name: Upload Artifact

@@ -7,7 +7,7 @@
       Language="1033"
       Version="$(var.ProductVersion)"
       Manufacturer="Your Company"
-      UpgradeCode="PUT-YOUR-STABLE-GUID-HERE">
+      UpgradeCode="6D3AD1B3-A7C3-4807-B844-B615A30E5371">
 
     <Package
         InstallerVersion="500"
@@ -78,6 +78,10 @@
         <!-- Required for proper uninstall cleanup -->
         <RemoveFolder Id="AppProgramMenuDir" On="uninstall" />
 
+      </Component>
+
+      <!-- Registry marker for installed state (separate component) -->
+      <Component Id="RegistryComponent" Guid="*">
         <RegistryValue
             Root="HKCU"
             Key="Software\$(var.AppName)"
@@ -85,7 +89,6 @@
             Type="integer"
             Value="1"
             KeyPath="yes" />
-
       </Component>
 
     </ComponentGroup>
