@@ -18,7 +18,7 @@ jobs:
       - uses: googleapis/release-please-action@v4
         id: release
         with:
-          release-type: simple
+          release-type: python
 
   # When a release is created, build for all platforms and attach artifacts
   build-release:
