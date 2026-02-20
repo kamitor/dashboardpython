@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.7.0](https://github.com/kamitor/dashboardpython/compare/v0.6.0...v0.7.0) (2026-02-20)
+
+
+### Features
+
+* Another build fix ([5ce1f78](https://github.com/kamitor/dashboardpython/commit/5ce1f78c519acee7fb824058771f18044f5967d1))
+* build the damn windows ([8279189](https://github.com/kamitor/dashboardpython/commit/82791895f4c0e9be0aea3353a3c309761f6fd451))
+* fix build pipeline for all platforms ([2970536](https://github.com/kamitor/dashboardpython/commit/2970536f1833126012d29af0d859c1cdb9f9a462))
+* new build spec ([f3f9242](https://github.com/kamitor/dashboardpython/commit/f3f924218e81061616e5521337b5f34e8c6a44c5))
+* windows... ([8600e21](https://github.com/kamitor/dashboardpython/commit/8600e21e09535ba939b3af7132635f92747fbc41))
+* Wix fix ([3d5bc39](https://github.com/kamitor/dashboardpython/commit/3d5bc396a4994f8a8b57614cab4ae2d47f1dd4c8))
+
 ## [0.6.0](https://github.com/kamitor/dashboardpython/compare/v0.5.0...v0.6.0) (2026-02-18)
 
 
