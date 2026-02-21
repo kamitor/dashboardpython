@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.0](https://github.com/kamitor/dashboardpython/compare/v0.9.0...v0.10.0) (2026-02-20)
+
+
+### Features
+
+* add pyproject.toml and update CI configs ([54eafb1](https://github.com/kamitor/dashboardpython/commit/54eafb1565bb18328da4b6e3def3b870230833d0))
+* add real smoke tests and fix CI to fail on errors ([ca0eb7e](https://github.com/kamitor/dashboardpython/commit/ca0eb7e59313c675dcc9fc67295a84eacf0d3f2d))
+
 ## [0.9.0](https://github.com/kamitor/dashboardpython/compare/v0.8.0...v0.9.0) (2026-02-20)
 
 
