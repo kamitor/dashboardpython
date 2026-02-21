@@ -5,7 +5,7 @@ A GitHub template for shipping cross-platform Python desktop apps with PySide6, 
 ## Features
 
 - **PySide6 GUI** with build metadata baked into the title bar
-- **PyInstaller** one-file builds for Windows, macOS, and Linux
+- **Platform-native packages** — `.exe` (Windows), `.dmg` (macOS), `.deb` / `.rpm` / `.AppImage` (Linux)
 - **release-please** for automated versioning, changelogs, and GitHub Releases
 - **CI pipeline** with ruff linting/formatting and pytest
 - **Dependabot** for pip and GitHub Actions dependency updates
@@ -25,7 +25,10 @@ app/
   main.py            # Application entry point and GUI
 tests/
   test_smoke.py      # Smoke tests (import, metadata, env vars)
-assets/              # Place icon.ico / icon.icns here for branded builds
+assets/              # Place icon.ico / icon.icns / icon.png here
+packaging/
+  template.desktop   # Freedesktop .desktop template (Linux)
+nfpm.yaml            # Config for .deb/.rpm generation
 .github/
   workflows/
     ci.yml           # Lint, format check, and tests on every push/PR
@@ -40,7 +43,7 @@ requirements.txt     # Runtime dependencies (used by CI)
 - [ ] Rename the project in `pyproject.toml` (`name`, `description`)
 - [ ] Update `requirements.txt` with your dependencies
 - [ ] Replace `app/main.py` with your application logic
-- [ ] Add your icon to `assets/` (`icon.ico` for Windows, `icon.icns` for macOS)
+- [ ] Add your icons to `assets/` (`icon.ico` for Windows, `icon.icns` for macOS, `icon.png` for Linux)
 - [ ] Update this README
 
 ## CI/CD Pipeline
@@ -54,7 +57,13 @@ requirements.txt     # Runtime dependencies (used by CI)
 
 1. Write commits using [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, etc.)
 2. Push to `main` — once CI passes, release-please automatically opens/updates a release PR that bumps the version in `pyproject.toml` and updates `CHANGELOG.md`
-3. Merge that PR to create a GitHub Release with built executables for all platforms
+3. Merge that PR to create a GitHub Release with platform-native packages:
+
+| Platform | Artifacts |
+|----------|-----------|
+| Windows | `.exe` |
+| macOS | `.dmg` |
+| Linux | `.deb`, `.rpm`, `.AppImage` |
 
 ## Local Development
 
@@ -62,7 +71,7 @@ requirements.txt     # Runtime dependencies (used by CI)
 python -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-pip install pytest ruff
+pip install pytest ruff pyyaml
 
 python app/main.py              # Run the app
 pytest                          # Run tests

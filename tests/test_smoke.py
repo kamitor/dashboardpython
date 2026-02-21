@@ -1,8 +1,11 @@
 """Smoke tests for the dashboard app (no GUI required)."""
 
 import importlib
+import pathlib
 import sys
 from unittest.mock import MagicMock
+
+import yaml
 
 
 def _ensure_pyside6_mock():
@@ -63,3 +66,30 @@ def test_app_name_from_repo_name(monkeypatch):
     mod = _load_main()
 
     assert mod.APP_NAME == "My Cool App"
+
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+
+
+def test_nfpm_config_valid():
+    """nfpm.yaml must exist and have required fields."""
+    nfpm_path = ROOT / "nfpm.yaml"
+    assert nfpm_path.exists(), "nfpm.yaml not found"
+
+    config = yaml.safe_load(nfpm_path.read_text())
+    assert "name" in config
+    assert "contents" in config
+    assert isinstance(config["contents"], list)
+    assert len(config["contents"]) > 0
+
+
+def test_desktop_file_exists():
+    """Desktop template must exist with required keys."""
+    desktop = ROOT / "packaging" / "template.desktop"
+    assert desktop.exists(), "packaging/template.desktop not found"
+
+    text = desktop.read_text()
+    assert "[Desktop Entry]" in text
+    assert "Name=" in text
+    assert "Exec=" in text
+    assert "Type=Application" in text
