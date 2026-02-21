@@ -1,11 +1,51 @@
-version: 2
-updates:
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
+# =============================================================================
+# .github/dependabot.yml — automated dependency updates
+# =============================================================================
+# Dependabot updates:
+#   1. GitHub Actions — keeps SHA pins current (supply-chain security)
+#   2. Python packages — pip ecosystem
+#
+# Reference: https://docs.github.com/en/code-security/dependabot/
+# =============================================================================
 
-  - package-ecosystem: "github-actions"
+version: 2
+
+updates:
+  # ── GitHub Actions (SHA-pinned) ───────────────────────────────────────────
+  # Dependabot opens PRs updating SHA pins to the latest tagged release.
+  # Review each PR: check the action's release notes before merging.
+  - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "UTC"
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: "chore(actions)"
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  # ── Python (pip) ──────────────────────────────────────────────────────────
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "UTC"
+    labels:
+      - dependencies
+      - python
+    commit-message:
+      prefix: "chore(deps)"
+    ignore:
+      # Review major build-backend bumps manually
+      - dependency-name: "hatchling"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "cibuildwheel"
+        update-types: ["version-update:semver-major"]

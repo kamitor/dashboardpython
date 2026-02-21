@@ -1,0 +1,54 @@
+# nFPM configuration — generates .deb and .rpm from a pre-built binary.
+# Reference: https://nfpm.goreleaser.com/configuration/
+#
+# Used by scripts/build_deb.sh and scripts/build_rpm.sh.
+# Environment variables are expanded at package time.
+#
+# TODO: Replace PACKAGE_NAME, ORGANIZATION, COMPANY_NAME
+
+name:        "${APP_NAME}"
+arch:        "${NFPM_ARCH:-amd64}"     # amd64 | arm64
+platform:    linux
+version:     "${APP_VERSION}"
+release:     "1"
+section:     utils
+priority:    optional
+maintainer:  "ORGANIZATION <packages@example.com>"  # TODO
+description: |
+  PACKAGE_NAME — TODO: one-paragraph description.
+vendor:      "COMPANY_NAME"            # TODO
+homepage:    "https://github.com/ORGANIZATION/PACKAGE_NAME"  # TODO
+license:     "MIT"
+
+contents:
+  # Main binary
+  - src:  "dist/${APP_NAME}"
+    dst:  "/usr/bin/${APP_NAME}"
+    file_info:
+      mode: 0755
+
+  # Desktop integration
+  - src:  "packaging/PACKAGE_NAME.desktop"
+    dst:  "/usr/share/applications/${APP_NAME}.desktop"
+
+  # Icon (if present)
+  # - src:  "assets/icon.png"
+  #   dst:  "/usr/share/icons/hicolor/256x256/apps/${APP_NAME}.png"
+
+  # Man page scaffold (optional)
+  # - src:  "packaging/man/${APP_NAME}.1.gz"
+  #   dst:  "/usr/share/man/man1/${APP_NAME}.1.gz"
+
+# RPM-specific
+rpm:
+  group:   "Applications/Utilities"
+  summary: "TODO: one-line description"
+
+# Deb-specific
+deb:
+  lintian-overrides:
+    - "statically-linked-binary"
+
+scripts:
+  # postinstall:  packaging/scripts/postinstall.sh
+  # preremove:    packaging/scripts/preremove.sh

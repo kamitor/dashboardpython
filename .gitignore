@@ -1,25 +1,80 @@
-# Python
+# =============================================================================
+# .gitignore — Python project (cross-platform)
+# =============================================================================
+
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
+*$py.class
 *.egg-info/
 *.egg
+*.pyo
+.eggs/
+MANIFEST
 
-# Virtual environments
-venv/
-.venv/
-
-# PyInstaller
+# ── Build artifacts ───────────────────────────────────────────────────────────
 build/
 dist/
-*.spec
+wheelhouse/
+*.whl
 
-# IDE
+# NOTE: packaging/*.spec is committed (it's source, not a build output)
+# Exclude ONLY the generated windows-version.txt
+packaging/windows-version.txt
+
+# AppImage staging directories
+*.AppDir/
+*.AppImage   # keep .AppImage in dist/release, not root
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+.env
+
+# ── Tools ────────────────────────────────────────────────────────────────────
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.nox/
+htmlcov/
+.coverage
+coverage.xml
+*.cover
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
-# OS
+# ── OS ────────────────────────────────────────────────────────────────────────
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
-# Packaging artifacts
-packaging/windows-version.txt
+# ── Secrets — never commit these ─────────────────────────────────────────────
+*.pem
+*.p12
+*.pfx
+*.key
+certificate.p12
+build.keychain
+.env.local
+.env.*.local
+secrets/
+
+# ── macOS build artifacts ─────────────────────────────────────────────────────
+*.dmg
+*.pkg
+*.ipa
+
+# ── Windows build artifacts ───────────────────────────────────────────────────
+*.msi
+*.exe   # release binaries live in dist/release, not root
