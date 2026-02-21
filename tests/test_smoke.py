@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 
 def _ensure_pyside6_mock():
-    """If PySide6.QtWidgets can't be loaded, inject a mock so app.main can be imported."""
+    """Mock PySide6 if QtWidgets can't be loaded."""
     try:
         from PySide6 import QtWidgets  # noqa: F401
     except (ModuleNotFoundError, ImportError):
