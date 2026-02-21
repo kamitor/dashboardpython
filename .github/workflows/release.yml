@@ -82,13 +82,13 @@ jobs:
 
     steps:
       - name: Checkout (SSH)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98  # v4.2.2
         with:
           ssh-key: ${{ secrets.DEPLOY_KEY }}
           fetch-depth: 0
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: ${{ matrix.python }}
           cache: pip
@@ -121,20 +121,20 @@ jobs:
 
     steps:
       - name: Checkout (SSH)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98  # v4.2.2
         with:
           ssh-key: ${{ secrets.DEPLOY_KEY }}
           fetch-depth: 0
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: "3.12"
 
       # aarch64 Linux cross-compilation requires QEMU
       - name: Set up QEMU (Linux aarch64)
         if: runner.os == 'Linux'
-        uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf  # v3.2.0
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130  # v3.7.0
         with:
           platforms: arm64
 
@@ -152,7 +152,7 @@ jobs:
           CIBW_BUILD_VERBOSITY: 1
 
       - name: Upload wheel artifacts
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882  # v4.4.3
+        uses: actions/upload-artifact@47309c993abb98030a35d55ef7ff34b7fa1074b5  # v4.4.3
         with:
           name: wheels-${{ matrix.os }}
           path: wheelhouse/
@@ -171,13 +171,13 @@ jobs:
 
     steps:
       - name: Checkout (SSH)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98  # v4.2.2
         with:
           ssh-key: ${{ secrets.DEPLOY_KEY }}
           fetch-depth: 0
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: "3.12"
           cache: pip
@@ -253,7 +253,7 @@ jobs:
 
       # ── Upload artifacts ─────────────────────────────────────────────────
       - name: Upload Linux artifacts
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882  # v4.4.3
+        uses: actions/upload-artifact@47309c993abb98030a35d55ef7ff34b7fa1074b5  # v4.4.3
         with:
           name: dist-linux
           path: dist/release/
@@ -272,13 +272,13 @@ jobs:
 
     steps:
       - name: Checkout (SSH)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98  # v4.2.2
         with:
           ssh-key: ${{ secrets.DEPLOY_KEY }}
           fetch-depth: 0
 
       - name: Set up Python 3.12 (universal2)
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: "3.12"
           cache: pip
@@ -374,7 +374,7 @@ jobs:
       #     rm "dist/${{ env.APP_NAME }}-notarize.zip"
 
       - name: Upload macOS artifacts
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882  # v4.4.3
+        uses: actions/upload-artifact@47309c993abb98030a35d55ef7ff34b7fa1074b5  # v4.4.3
         with:
           name: dist-macos
           path: dist/release/
@@ -393,13 +393,13 @@ jobs:
 
     steps:
       - name: Checkout (SSH)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+        uses: actions/checkout@0c366fd6a839edf440554fa01a7085ccba70ac98  # v4.2.2
         with:
           ssh-key: ${{ secrets.DEPLOY_KEY }}
           fetch-depth: 0
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: "3.12"
           cache: pip
@@ -483,7 +483,7 @@ jobs:
       #     Remove-Item cert.pfx
 
       - name: Upload Windows artifacts
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882  # v4.4.3
+        uses: actions/upload-artifact@47309c993abb98030a35d55ef7ff34b7fa1074b5  # v4.4.3
         with:
           name: dist-windows
           path: dist/release/
@@ -520,13 +520,13 @@ jobs:
           subject-path: "all-artifacts/**"
 
       - name: Generate SBOM attestation
-        uses: actions/attest-sbom@v1
+        uses: actions/attest-sbom@v3
         with:
           subject-path: "all-artifacts/**"
           sbom-format:  spdx-json
 
       - name: Re-upload attested artifacts
-        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882  # v4.4.3
+        uses: actions/upload-artifact@47309c993abb98030a35d55ef7ff34b7fa1074b5  # v4.4.3
         with:
           name: all-artifacts-attested
           path: all-artifacts/
