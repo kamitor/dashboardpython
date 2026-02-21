@@ -9,36 +9,36 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write        # required for release-please to create/manage labels
 
 jobs:
+  # ── Create or update the release PR ────────────────────────────────────────
   release-please:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
+      tag_name:        ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
         with:
           release-type: python
 
-  # When a release is created, build for all platforms and attach artifacts
-  build-release:
+  # ── Build all platform artifacts when a release is created ─────────────────
+  build:
     needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
-
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: windows-latest
-            artifact-name: windows
+            artifact: windows
           - os: macos-latest
-            artifact-name: macos
+            artifact: macos
           - os: ubuntu-latest
-            artifact-name: linux
-
+            artifact: linux
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -46,250 +46,192 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
-          cache: "pip"
+          python-version: "3.13"
+          cache: pip
 
+      # ── Metadata ────────────────────────────────────────────────────────────
       - name: Set build metadata
         shell: bash
         run: |
           TAG="${{ needs.release-please.outputs.tag_name }}"
           VERSION="${TAG#v}"
+          REPO="${GITHUB_REPOSITORY#*/}"
+          echo "APP_VERSION=$VERSION"   >> "$GITHUB_ENV"
+          echo "REPO_NAME=$REPO"        >> "$GITHUB_ENV"
 
-          echo "APP_VERSION=$VERSION"               >> "$GITHUB_ENV"
-          echo "BUILD_NUMBER=$GITHUB_RUN_NUMBER"     >> "$GITHUB_ENV"
-          echo "COMMIT_SHA=$GITHUB_SHA"              >> "$GITHUB_ENV"
-          echo "REPO_NAME=${GITHUB_REPOSITORY#*/}"   >> "$GITHUB_ENV"
-
+      # ── Dependencies ─────────────────────────────────────────────────────────
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Install Linux system dependencies
+      - name: Install Linux system libraries
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libxkbcommon-x11-0 \
-            libxcb-xinerama0 \
-            libxcb-cursor0 \
-            libegl1 \
-            libglib2.0-0
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libxkbcommon-x11-0 libxcb-xinerama0 libxcb-cursor0 \
+            libegl1 libglib2.0-0
 
-      - name: Generate Windows version-info file
+      # ── Windows: generate version resource then build .exe ──────────────────
+      - name: Generate Windows version resource
         if: runner.os == 'Windows'
         shell: python
         run: |
-          import os
-
-          version = os.environ["APP_VERSION"]
-          parts = version.split(".")
-          major = int(parts[0]) if len(parts) > 0 else 0
-          minor = int(parts[1]) if len(parts) > 1 else 0
-          patch = int(parts[2]) if len(parts) > 2 else 0
-          repo  = os.environ.get("REPO_NAME", "MyApp")
-
-          content = f"""# UTF-8
-          VSVersionInfo(
-            ffi=FixedFileInfo(
-              filevers=({major}, {minor}, {patch}, 0),
-              prodvers=({major}, {minor}, {patch}, 0),
-              mask=0x3f,
-              flags=0x0,
-              OS=0x40004,
-              fileType=0x1,
-              subtype=0x0,
-              date=(0, 0)
-            ),
-            kids=[
-              StringFileInfo(
-                [
-                  StringTable(
-                    u'040904B0',
-                    [
-                      StringStruct(u'CompanyName',      u''),
-                      StringStruct(u'FileDescription',  u'{repo}'),
-                      StringStruct(u'FileVersion',      u'{version}'),
-                      StringStruct(u'InternalName',     u'{repo}'),
-                      StringStruct(u'OriginalFilename', u'{repo}.exe'),
-                      StringStruct(u'ProductName',      u'{repo}'),
-                      StringStruct(u'ProductVersion',   u'{version}'),
-                    ]
-                  )
-                ]
-              ),
-              VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
-            ]
-          )
-          """
-
+          import os, textwrap
+          v = os.environ["APP_VERSION"].split(".")
+          major, minor, patch = int(v[0]), int(v[1] if len(v)>1 else 0), int(v[2] if len(v)>2 else 0)
+          repo = os.environ["REPO_NAME"]
+          ver  = os.environ["APP_VERSION"]
+          txt = textwrap.dedent(f"""
+            VSVersionInfo(
+              ffi=FixedFileInfo(
+                filevers=({major},{minor},{patch},0), prodvers=({major},{minor},{patch},0),
+                mask=0x3f, flags=0x0, OS=0x40004, fileType=0x1, subtype=0x0, date=(0,0)),
+              kids=[
+                StringFileInfo([StringTable(u'040904B0',[
+                  StringStruct(u'CompanyName',      u''),
+                  StringStruct(u'FileDescription',  u'{repo}'),
+                  StringStruct(u'FileVersion',      u'{ver}'),
+                  StringStruct(u'InternalName',     u'{repo}'),
+                  StringStruct(u'OriginalFilename', u'{repo}.exe'),
+                  StringStruct(u'ProductName',      u'{repo}'),
+                  StringStruct(u'ProductVersion',   u'{ver}'),
+                ])]),
+                VarFileInfo([VarStruct(u'Translation',[1033,1200])])
+              ])
+          """).strip()
           os.makedirs("packaging", exist_ok=True)
-          with open("packaging/windows-version.txt", "w") as f:
-              f.write(content)
+          open("packaging/windows-version.txt","w").write(txt)
 
-      - name: Build Windows
+      - name: Build Windows .exe
         if: runner.os == 'Windows'
         shell: powershell
         run: |
-          $iconArg = @()
-          if (Test-Path "assets/icon.ico") {
-            $iconArg = @("--icon", "assets/icon.ico")
-          }
-          pyinstaller `
-            --clean `
-            --noconfirm `
-            --windowed `
-            --onefile `
-            @iconArg `
+          $icon = if (Test-Path "assets/icon.ico") { @("--icon","assets/icon.ico") } else { @() }
+          pyinstaller --clean --noconfirm --onefile --windowed `
+            @icon `
             --version-file packaging/windows-version.txt `
-            --name "${{ env.REPO_NAME }}" `
+            --name "$env:REPO_NAME" `
             app/main.py
+          Rename-Item "dist/$env:REPO_NAME.exe" `
+            "dist/$env:REPO_NAME-$env:APP_VERSION-windows.exe"
 
-      - name: Rename Windows artifact
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          mv "dist/${{ env.REPO_NAME }}.exe" \
-             "dist/${{ env.REPO_NAME }}-${{ env.APP_VERSION }}-windows.exe"
-
-      - name: Build macOS
+      # ── macOS: build .app bundle, zip it, then wrap in DMG ──────────────────
+      - name: Build macOS .app
         if: runner.os == 'macOS'
         run: |
-          ICON_ARG=""
-          if [ -f "assets/icon.icns" ]; then
-            ICON_ARG="--icon assets/icon.icns"
-          elif [ -f "assets/icon.ico" ]; then
-            ICON_ARG="--icon assets/icon.ico"
-          fi
-          pyinstaller \
-            --clean \
-            --noconfirm \
-            --windowed \
-            --onefile \
-            $ICON_ARG \
-            --name "${{ env.REPO_NAME }}" \
+          ICON=""
+          [ -f "assets/icon.icns" ] && ICON="--icon assets/icon.icns"
+          [ -z "$ICON" ] && [ -f "assets/icon.ico" ] && ICON="--icon assets/icon.ico"
+          pyinstaller --clean --noconfirm --onefile --windowed \
+            $ICON \
+            --name "$REPO_NAME" \
             app/main.py
 
-      - name: Package macOS DMG
+      - name: Package macOS artifacts (.app.zip + .dmg)
         if: runner.os == 'macOS'
         run: |
-          brew install create-dmg
-          # PyInstaller --onefile --windowed on macOS produces a .app bundle
-          if [ -d "dist/${{ env.REPO_NAME }}.app" ]; then
+          if [ -d "dist/$REPO_NAME.app" ]; then
+            # Zip the .app bundle for direct distribution
+            cd dist
+            zip -r "${REPO_NAME}-${APP_VERSION}-macos.app.zip" "${REPO_NAME}.app"
+            cd ..
+
+            # Build a DMG installer
+            brew install create-dmg --quiet
             create-dmg \
-              --volname "${{ env.REPO_NAME }}" \
+              --volname "$REPO_NAME" \
               --window-size 600 400 \
               --icon-size 100 \
-              --icon "${{ env.REPO_NAME }}.app" 150 190 \
+              --icon "${REPO_NAME}.app" 150 190 \
               --app-drop-link 450 190 \
-              "dist/${{ env.REPO_NAME }}-${{ env.APP_VERSION }}-macos.dmg" \
-              "dist/${{ env.REPO_NAME }}.app"
-            rm -rf "dist/${{ env.REPO_NAME }}.app"
-          else
-            # Fallback: bare binary, just rename it
-            mv "dist/${{ env.REPO_NAME }}" \
-               "dist/${{ env.REPO_NAME }}-${{ env.APP_VERSION }}-macos"
+              "dist/${REPO_NAME}-${APP_VERSION}-macos.dmg" \
+              "dist/${REPO_NAME}.app" || true   # create-dmg exits 1 when no code-signing; artifacts still produced
+
+            rm -rf "dist/${REPO_NAME}.app"
           fi
 
-      - name: Build Linux
+      # ── Linux: build binary, then package .deb / .rpm / .AppImage ───────────
+      - name: Build Linux binary
         if: runner.os == 'Linux'
         run: |
-          pyinstaller \
-            --clean \
-            --noconfirm \
-            --onefile \
-            --name "${{ env.REPO_NAME }}" \
+          pyinstaller --clean --noconfirm --onefile \
+            --name "$REPO_NAME" \
             app/main.py
 
       - name: Generate .desktop file
         if: runner.os == 'Linux'
         run: |
-          export APP_NAME=$(echo "${{ env.REPO_NAME }}" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
-          envsubst < packaging/template.desktop > "packaging/${{ env.REPO_NAME }}.desktop"
+          export APP_NAME
+          APP_NAME=$(echo "$REPO_NAME" | sed 's/-/ /g; s/\b./\u&/g')
+          envsubst < packaging/template.desktop > "packaging/${REPO_NAME}.desktop"
 
       - name: Package Linux .deb and .rpm
         if: runner.os == 'Linux'
         run: |
-          # Install nfpm
-          curl -sfL https://github.com/goreleaser/nfpm/releases/download/v2.41.1/nfpm_2.41.1_linux_amd64.tar.gz \
+          curl -fsSL \
+            https://github.com/goreleaser/nfpm/releases/download/v2.41.1/nfpm_2.41.1_linux_amd64.tar.gz \
             | tar -xz -C /usr/local/bin nfpm
 
-          export REPO_NAME="${{ env.REPO_NAME }}"
-          export APP_VERSION="${{ env.APP_VERSION }}"
-          export APP_NAME=$(echo "$REPO_NAME" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
-          export GITHUB_REPOSITORY="${{ github.repository }}"
+          export APP_NAME
+          APP_NAME=$(echo "$REPO_NAME" | sed 's/-/ /g; s/\b./\u&/g')
 
           nfpm pkg --packager deb \
-            --target "dist/${{ env.REPO_NAME }}-${{ env.APP_VERSION }}-amd64.deb"
+            --target "dist/${REPO_NAME}-${APP_VERSION}-amd64.deb"
           nfpm pkg --packager rpm \
-            --target "dist/${{ env.REPO_NAME }}-${{ env.APP_VERSION }}-x86_64.rpm"
+            --target "dist/${REPO_NAME}-${APP_VERSION}-x86_64.rpm"
 
       - name: Package Linux AppImage
         if: runner.os == 'Linux'
         run: |
-          APP_NAME=$(echo "${{ env.REPO_NAME }}" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
-
-          # Create AppDir structure
+          # Build AppDir
           mkdir -p AppDir/usr/bin
-          cp "dist/${{ env.REPO_NAME }}" AppDir/usr/bin/
-          cp "packaging/${{ env.REPO_NAME }}.desktop" AppDir/
-          ln -s usr/bin/${{ env.REPO_NAME }} AppDir/AppRun
+          cp "dist/$REPO_NAME" AppDir/usr/bin/
+          cp "packaging/${REPO_NAME}.desktop" AppDir/
 
-          # Use a placeholder icon if none exists
+          # Icon — use real asset or 1×1 placeholder so appimagetool doesn't fail
           if [ -f "assets/icon.png" ]; then
-            cp assets/icon.png "AppDir/${{ env.REPO_NAME }}.png"
+            cp assets/icon.png "AppDir/${REPO_NAME}.png"
           else
-            # Generate a 1x1 placeholder so appimagetool doesn't fail
             python -c "
           import struct, zlib
-          def png():
-              head = b'\\x89PNG\\r\\n\\x1a\\n'
-              ihdr = struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0)
-              ihdr_chunk = b'IHDR' + ihdr
-              ihdr_crc = struct.pack('>I', zlib.crc32(ihdr_chunk) & 0xffffffff)
-              idat = zlib.compress(b'\\x00\\xff\\x00\\x00')
-              idat_chunk = b'IDAT' + idat
-              idat_crc = struct.pack('>I', zlib.crc32(idat_chunk) & 0xffffffff)
-              return (head
-                  + struct.pack('>I', len(ihdr)) + ihdr_chunk + ihdr_crc
-                  + struct.pack('>I', len(idat)) + idat_chunk + idat_crc
-                  + struct.pack('>I', 0) + b'IEND' + struct.pack('>I', zlib.crc32(b'IEND') & 0xffffffff))
-          open('AppDir/${{ env.REPO_NAME }}.png', 'wb').write(png())
+          def chunk(t, d): c=struct.pack('>I',len(d))+t+d; return c+struct.pack('>I',zlib.crc32(c[4:])&0xffffffff)
+          sig=b'\x89PNG\r\n\x1a\n'
+          ihdr=chunk(b'IHDR',struct.pack('>IIBBBBB',1,1,8,2,0,0,0))
+          idat=chunk(b'IDAT',zlib.compress(b'\x00\xff\x00\x00'))
+          iend=chunk(b'IEND',b'')
+          open('AppDir/${REPO_NAME}.png','wb').write(sig+ihdr+idat+iend)
           "
           fi
 
-          # Download appimagetool
+          # appimagetool needs FUSE; --appimage-extract-and-run bypasses that on CI
           wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
+          ARCH=x86_64 ./appimagetool-x86_64.AppImage --appimage-extract-and-run \
+            AppDir "dist/${REPO_NAME}-${APP_VERSION}-x86_64.AppImage"
 
-          ARCH=x86_64 ./appimagetool-x86_64.AppImage --appimage-extract-and-run AppDir \
-            "dist/${{ env.REPO_NAME }}-${{ env.APP_VERSION }}-x86_64.AppImage"
+          rm "dist/$REPO_NAME"   # remove raw binary; keep packaged formats only
 
-          # Remove bare binary so only packaged formats are uploaded
-          rm "dist/${{ env.REPO_NAME }}"
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v6
+      # ── Upload artifacts ─────────────────────────────────────────────────────
+      - uses: actions/upload-artifact@v6
         with:
-          name: release-${{ matrix.artifact-name }}
+          name: release-${{ matrix.artifact }}
           path: dist/*
 
-  # Attach all built artifacts to the GitHub Release
-  upload-to-release:
+  # ── Attach all artifacts to the GitHub Release ────────────────────────────
+  attach:
     runs-on: ubuntu-latest
-    needs: [release-please, build-release]
-
+    needs: [release-please, build]
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v6
         with:
           pattern: release-*
           path: release-assets
           merge-multiple: true
 
-      - name: Upload assets to GitHub Release
-        uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.release-please.outputs.tag_name }}
           files: release-assets/*

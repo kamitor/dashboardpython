@@ -3,7 +3,7 @@ arch: amd64
 platform: linux
 version: "${APP_VERSION}"
 description: "${APP_NAME} desktop application"
-maintainer: "Template User <template@example.com>"
+maintainer: "Your Name <you@example.com>"   # TODO
 homepage: "https://github.com/${GITHUB_REPOSITORY}"
 
 contents:
