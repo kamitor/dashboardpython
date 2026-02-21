@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.10.1](https://github.com/kamitor/dashboardpython/compare/v0.10.0...v0.10.1) (2026-02-21)
+
+
+### Bug Fixes
+
+* add app/__init__.py so tests can import the module in CI ([40fcd88](https://github.com/kamitor/dashboardpython/commit/40fcd8850d2d75c077967d64779182aec5ac3382))
+* add pythonpath to pytest config so CI can resolve app module ([21de869](https://github.com/kamitor/dashboardpython/commit/21de8696a5ad0d1ed0a8940c16e8d1263309d89b))
+* mock PySide6 when native Qt libs are missing in CI ([f70491e](https://github.com/kamitor/dashboardpython/commit/f70491e2e0c62e49499d315926020d115b47d908))
+* only run release-please after CI passes ([69c024a](https://github.com/kamitor/dashboardpython/commit/69c024a20916c566a8cab15166f146d7b90ed514))
+* shorten docstring to satisfy ruff line-length check ([3d493e2](https://github.com/kamitor/dashboardpython/commit/3d493e27276c04c0d13831d9b769c1f1cc1fdcb1))
+
 ## [0.10.0](https://github.com/kamitor/dashboardpython/compare/v0.9.0...v0.10.0) (2026-02-20)
 
 

@@ -1,6 +1,6 @@
 [project]
 name = "dashboardpython"
-version = "0.10.0"
+version = "0.10.1"
 description = "PySide6 desktop-app template with PyInstaller builds and release-please releases"
 requires-python = ">=3.11"
 
