@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.11.0](https://github.com/kamitor/dashboardpython/compare/v0.10.1...v0.11.0) (2026-02-21)
+
+
+### Features
+
+* add Linux packaging config files ([2e70ed2](https://github.com/kamitor/dashboardpython/commit/2e70ed28f9e227c3553025735007f4acdbdb4228))
+* add packaging config tests and update README ([2170a25](https://github.com/kamitor/dashboardpython/commit/2170a2518ece6d7a52761daf75353f1521acdf42))
+* produce proper platform-native packages ([9ba1a1b](https://github.com/kamitor/dashboardpython/commit/9ba1a1be7299310380cedfd6913e163b8fad86ef))
+
 ## [0.10.1](https://github.com/kamitor/dashboardpython/compare/v0.10.0...v0.10.1) (2026-02-21)
 
 
