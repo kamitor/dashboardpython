@@ -10,16 +10,17 @@ A GitHub template that packages and releases a Python application as:
 | macOS    | `.app.zip`, `.dmg` |
 | Linux    | `.AppImage`, `.deb`, `.rpm` |
 
-Releases are fully automated via [Conventional Commits](https://www.conventionalcommits.org/) + [Release Please](https://github.com/googleapis/release-please-action).
+Releases are fully automated — no pull requests, no manual steps.
 
 ---
 
 ## How it works
 
 ```
-push to main  →  CI (lint + test)  →  Release Please PR
-merge PR      →  GitHub Release created  →  Build workflow runs
-                                          →  Artifacts attached to release
+bump version in pyproject.toml
+push to main  →  CI (lint + test)  →  new version detected
+                                    →  GitHub Release created automatically
+                                    →  .exe / .app / .dmg / .AppImage / .deb / .rpm attached
 ```
 
 ---
@@ -62,19 +63,22 @@ In your repository: **Settings → Actions → General → Workflow permissions*
 
 ### 5. Ship a release
 
-Commit using [Conventional Commit](https://www.conventionalcommits.org/) messages:
+Bump the version in `pyproject.toml`, then push:
 
 ```bash
-git commit -m "feat: add dark mode"
-git commit -m "fix: crash on startup"
+# Edit pyproject.toml: version = "1.0.0"
+git add pyproject.toml
+git commit -m "chore: release 1.0.0"
 git push origin main
 ```
 
-After CI passes, Release Please opens a release PR. Merging it:
-1. Bumps the version in `pyproject.toml`
-2. Creates a GitHub Release
-3. Triggers the build workflow
-4. Attaches `.exe`, `.dmg`, `.app.zip`, `.AppImage`, `.deb`, `.rpm` to the release
+Once CI passes, the release workflow detects the new version tag does not yet
+exist and automatically:
+1. Builds `.exe`, `.app.zip`, `.dmg`, `.AppImage`, `.deb`, `.rpm`
+2. Creates a `v1.0.0` GitHub Release with all artifacts attached
+
+Subsequent pushes with the same version are ignored — a release is only
+created once per version number.
 
 ---
 
@@ -94,7 +98,7 @@ pytest                      # run tests
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | `ci.yml` | every push / PR | lint (ruff) + tests (pytest) |
-| `release-please.yml` | CI passes on main | manage release PRs and build artifacts |
+| `release.yml` | CI passes on main | detect new version → build + publish release |
 | `codeql.yml` | push / PR / weekly | security analysis |
 
 ---
