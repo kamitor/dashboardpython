@@ -146,6 +146,13 @@ jobs:
             --name "${{ env.REPO_NAME }}" `
             app/main.py
 
+      - name: Rename Windows artifact
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          mv "dist/${{ env.REPO_NAME }}.exe" \
+             "dist/${{ env.REPO_NAME }}-${{ env.APP_VERSION }}-windows.exe"
+
       - name: Build macOS
         if: runner.os == 'macOS'
         run: |
@@ -164,6 +171,27 @@ jobs:
             --name "${{ env.REPO_NAME }}" \
             app/main.py
 
+      - name: Package macOS DMG
+        if: runner.os == 'macOS'
+        run: |
+          brew install create-dmg
+          # PyInstaller --onefile --windowed on macOS produces a .app bundle
+          if [ -d "dist/${{ env.REPO_NAME }}.app" ]; then
+            create-dmg \
+              --volname "${{ env.REPO_NAME }}" \
+              --window-size 600 400 \
+              --icon-size 100 \
+              --icon "${{ env.REPO_NAME }}.app" 150 190 \
+              --app-drop-link 450 190 \
+              "dist/${{ env.REPO_NAME }}-${{ env.APP_VERSION }}-macos.dmg" \
+              "dist/${{ env.REPO_NAME }}.app"
+            rm -rf "dist/${{ env.REPO_NAME }}.app"
+          else
+            # Fallback: bare binary, just rename it
+            mv "dist/${{ env.REPO_NAME }}" \
+               "dist/${{ env.REPO_NAME }}-${{ env.APP_VERSION }}-macos"
+          fi
+
       - name: Build Linux
         if: runner.os == 'Linux'
         run: |
@@ -174,20 +202,72 @@ jobs:
             --name "${{ env.REPO_NAME }}" \
             app/main.py
 
-      # Rename with version and platform
-      - name: Rename artifact
-        shell: bash
+      - name: Generate .desktop file
+        if: runner.os == 'Linux'
         run: |
-          cd dist
-          for f in *; do
-            name="${f%.*}"
-            ext="${f##*.}"
-            if [ "$name" = "$ext" ]; then
-              mv "$f" "${f}-${{ env.APP_VERSION }}-${{ matrix.artifact-name }}"
-            else
-              mv "$f" "${name}-${{ env.APP_VERSION }}-${{ matrix.artifact-name }}.${ext}"
-            fi
-          done
+          export APP_NAME=$(echo "${{ env.REPO_NAME }}" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
+          envsubst < packaging/template.desktop > "packaging/${{ env.REPO_NAME }}.desktop"
+
+      - name: Package Linux .deb and .rpm
+        if: runner.os == 'Linux'
+        run: |
+          # Install nfpm
+          curl -sfL https://github.com/goreleaser/nfpm/releases/download/v2.41.1/nfpm_2.41.1_linux_amd64.tar.gz \
+            | tar -xz -C /usr/local/bin nfpm
+
+          export REPO_NAME="${{ env.REPO_NAME }}"
+          export APP_VERSION="${{ env.APP_VERSION }}"
+          export APP_NAME=$(echo "$REPO_NAME" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
+          export GITHUB_REPOSITORY="${{ github.repository }}"
+
+          nfpm pkg --packager deb \
+            --target "dist/${{ env.REPO_NAME }}-${{ env.APP_VERSION }}-amd64.deb"
+          nfpm pkg --packager rpm \
+            --target "dist/${{ env.REPO_NAME }}-${{ env.APP_VERSION }}-x86_64.rpm"
+
+      - name: Package Linux AppImage
+        if: runner.os == 'Linux'
+        run: |
+          APP_NAME=$(echo "${{ env.REPO_NAME }}" | sed 's/-/ /g' | sed 's/\b\(.\)/\u\1/g')
+
+          # Create AppDir structure
+          mkdir -p AppDir/usr/bin
+          cp "dist/${{ env.REPO_NAME }}" AppDir/usr/bin/
+          cp "packaging/${{ env.REPO_NAME }}.desktop" AppDir/
+          ln -s usr/bin/${{ env.REPO_NAME }} AppDir/AppRun
+
+          # Use a placeholder icon if none exists
+          if [ -f "assets/icon.png" ]; then
+            cp assets/icon.png "AppDir/${{ env.REPO_NAME }}.png"
+          else
+            # Generate a 1x1 placeholder so appimagetool doesn't fail
+            python -c "
+          import struct, zlib
+          def png():
+              head = b'\\x89PNG\\r\\n\\x1a\\n'
+              ihdr = struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0)
+              ihdr_chunk = b'IHDR' + ihdr
+              ihdr_crc = struct.pack('>I', zlib.crc32(ihdr_chunk) & 0xffffffff)
+              idat = zlib.compress(b'\\x00\\xff\\x00\\x00')
+              idat_chunk = b'IDAT' + idat
+              idat_crc = struct.pack('>I', zlib.crc32(idat_chunk) & 0xffffffff)
+              return (head
+                  + struct.pack('>I', len(ihdr)) + ihdr_chunk + ihdr_crc
+                  + struct.pack('>I', len(idat)) + idat_chunk + idat_crc
+                  + struct.pack('>I', 0) + b'IEND' + struct.pack('>I', zlib.crc32(b'IEND') & 0xffffffff))
+          open('AppDir/${{ env.REPO_NAME }}.png', 'wb').write(png())
+          "
+          fi
+
+          # Download appimagetool
+          wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool-x86_64.AppImage
+
+          ARCH=x86_64 ./appimagetool-x86_64.AppImage --appimage-extract-and-run AppDir \
+            "dist/${{ env.REPO_NAME }}-${{ env.APP_VERSION }}-x86_64.AppImage"
+
+          # Remove bare binary so only packaged formats are uploaded
+          rm "dist/${{ env.REPO_NAME }}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
