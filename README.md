@@ -48,24 +48,13 @@ requirements.txt     # Runtime dependencies (used by CI)
 | Workflow | Trigger | What it does |
 |----------|---------|--------------|
 | **CI** | Push & PRs | Ruff lint, ruff format check, pytest |
-| **Release** | Push to `main` | release-please opens/updates a release PR; on merge, builds all 3 platforms and attaches artifacts to the GitHub Release |
+| **Release** | After CI passes on `main` | release-please opens/updates a release PR; on merge, builds all 3 platforms and attaches artifacts to the GitHub Release |
 
 ### How Releases Work
 
 1. Write commits using [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`, etc.)
-2. release-please automatically opens a PR that bumps the version in `pyproject.toml` and updates `CHANGELOG.md`
+2. Push to `main` — once CI passes, release-please automatically opens/updates a release PR that bumps the version in `pyproject.toml` and updates `CHANGELOG.md`
 3. Merge that PR to create a GitHub Release with built executables for all platforms
-
-### Keeping in Sync
-
-If release-please pushes a version-bump commit while you have local changes:
-
-```bash
-git pull --rebase    # always rebase before pushing
-git push
-```
-
-Or work on **feature branches** and create PRs — this avoids sync issues entirely.
 
 ## Local Development
 
