@@ -163,11 +163,16 @@ jobs:
             --name "$env:REPO_NAME" `
             app/main.py
 
+      - name: Install NSIS
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: choco install nsis --no-progress -y
+
       - name: Build Windows installer
         if: runner.os == 'Windows'
         shell: python
         run: |
-          import os, subprocess
+          import os, subprocess, shutil
           repo = os.environ["REPO_NAME"]
           ver  = os.environ["APP_VERSION"]
           nsi  = f"""Unicode true
@@ -193,10 +198,8 @@ jobs:
           os.makedirs("packaging", exist_ok=True)
           with open("packaging\\installer.nsi", "w") as f:
               f.write(nsi)
-          subprocess.run(
-              [r"C:\Program Files (x86)\NSIS\makensis.exe", "packaging\\installer.nsi"],
-              check=True,
-          )
+          makensis = shutil.which("makensis") or r"C:\Program Files (x86)\NSIS\makensis.exe"
+          subprocess.run([makensis, "packaging\\installer.nsi"], check=True)
 
       - name: Rename Windows portable artifact
         if: runner.os == 'Windows'
@@ -253,9 +256,12 @@ jobs:
 
       - name: Package .deb and .rpm
         if: runner.os == 'Linux'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          NFPM_VER=$(gh release view --repo goreleaser/nfpm --json tagName --jq '.tagName | ltrimstr("v")')
           curl -fsSL \
-            https://github.com/goreleaser/nfpm/releases/download/v2.41.1/nfpm_2.41.1_linux_amd64.tar.gz \
+            "https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VER}/nfpm_${NFPM_VER}_linux_amd64.tar.gz" \
             | tar -xz -C /usr/local/bin nfpm
           APP_NAME=$(echo "$REPO_NAME" | sed 's/-/ /g; s/\b./\u&/g')
           export APP_NAME
